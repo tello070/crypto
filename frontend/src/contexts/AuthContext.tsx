@@ -84,28 +84,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
+      
+      // First, create the user account
+      const { error: signUpError, data } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: name,
           },
+          // Important: We're using emailRedirectTo but will override with OTP
           emailRedirectTo: `${window.location.origin}/verify-email`,
         },
       });
 
-      if (error) throw error;
+      if (signUpError) throw signUpError;
 
-      // Send OTP for email verification
-      await supabase.auth.resend({
+      // Then, immediately send an OTP instead of using the email link
+      const { error: otpError } = await supabase.auth.resend({
         type: 'signup',
         email,
+        options: {
+          // Force OTP (one-time password) instead of magiclink
+          emailRedirectTo: undefined,
+        }
       });
+
+      if (otpError) throw otpError;
 
       toast({
         title: "Account created!",
-        description: "Please check your email for verification code.",
+        description: "Please check your email for the 6-digit verification code.",
       });
     } catch (error: any) {
       toast({
@@ -152,13 +161,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
+        options: {
+          // Force OTP (one-time password) instead of magiclink
+          emailRedirectTo: undefined,
+        }
       });
       
       if (error) throw error;
       
       toast({
-        title: "Verification email sent",
-        description: "Please check your inbox for the verification code.",
+        title: "Verification code sent",
+        description: "Please check your inbox for the 6-digit verification code.",
       });
     } catch (error: any) {
       toast({

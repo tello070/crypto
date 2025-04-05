@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -128,6 +128,17 @@ export default function Register() {
                     <p className="text-sm text-destructive">{passwordError}</p>
                   )}
                 </div>
+                
+                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Email Verification Required</p>
+                    <p className="text-xs text-muted-foreground">
+                      We'll send a 6-digit verification code to your email after registration.
+                    </p>
+                  </div>
+                </div>
+                
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="terms" 

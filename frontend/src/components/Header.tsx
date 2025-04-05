@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Sheet, 
@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, Settings, DollarSign } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, DollarSign, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
@@ -23,7 +23,9 @@ export function Header() {
   const [activeSection, setActiveSection] = useState("hero");
   const { currentUser, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
+  const isDashboard = location.pathname === "/dashboard";
 
   // Track scroll position to highlight active nav item
   useEffect(() => {
@@ -77,6 +79,7 @@ export function Header() {
   const handleLogout = async () => {
     try {
       await logout();
+      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -129,20 +132,41 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => scrollToSection(item.id)}
-              className={`text-foreground/80 hover:text-primary transition-colors relative py-1 ${
-                activeSection === item.id ? "text-primary" : ""
-              }`}
-            >
-              {item.label}
-              {activeSection === item.id && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full"></span>
-              )}
-            </button>
-          ))}
+          {currentUser ? (
+            <>
+              <Link 
+                to="/" 
+                className={`text-foreground/80 hover:text-primary transition-colors ${
+                  isHomePage ? "text-primary" : ""
+                }`}
+              >
+                Home
+              </Link>
+              <Link 
+                to="/dashboard" 
+                className={`text-foreground/80 hover:text-primary transition-colors ${
+                  isDashboard ? "text-primary" : ""
+                }`}
+              >
+                Dashboard
+              </Link>
+            </>
+          ) : (
+            navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                className={`text-foreground/80 hover:text-primary transition-colors relative py-1 ${
+                  activeSection === item.id ? "text-primary" : ""
+                }`}
+              >
+                {item.label}
+                {activeSection === item.id && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full"></span>
+                )}
+              </button>
+            ))
+          )}
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
@@ -160,6 +184,10 @@ export function Header() {
               <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel>Investor Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/dashboard")}>
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
@@ -222,26 +250,61 @@ export function Header() {
               )}
               
               <nav className="flex flex-col gap-4 mt-8">
-                {navItems.map((item) => (
-                  <button
-                    key={item.id}
-                    className={`text-lg py-2 hover:text-primary transition-colors text-left ${
-                      activeSection === item.id ? "text-primary font-medium" : ""
-                    }`}
-                    onClick={() => scrollToSection(item.id)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                {currentUser ? (
+                  <>
+                    <Link 
+                      to="/" 
+                      className="text-lg py-2 hover:text-primary transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Home
+                    </Link>
+                    <Link 
+                      to="/dashboard" 
+                      className="text-lg py-2 hover:text-primary transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link 
+                      to="/profile" 
+                      className="text-lg py-2 hover:text-primary transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <Link 
+                      to="/settings" 
+                      className="text-lg py-2 hover:text-primary transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                  </>
+                ) : (
+                  navItems.map((item) => (
+                    <button
+                      key={item.id}
+                      className={`text-lg py-2 hover:text-primary transition-colors text-left ${
+                        activeSection === item.id ? "text-primary font-medium" : ""
+                      }`}
+                      onClick={() => scrollToSection(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))
+                )}
               </nav>
               
               <div className="mt-auto mb-8 flex flex-col gap-4">
                 {currentUser ? (
                   <>
-                    <Button variant="outline" className="w-full border-primary text-primary">
-                      <DollarSign className="mr-2 h-4 w-4" />
-                      My Investments
-                    </Button>
+                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full border-primary text-primary">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
                     <Button 
                       variant="outline" 
                       className="w-full border-destructive text-destructive hover:bg-destructive/10"

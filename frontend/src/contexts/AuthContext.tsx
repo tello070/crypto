@@ -3,10 +3,17 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
+const isUserAdmin = (user: User | null) => {
+  if (!user) return false;
+  // Check if user has admin role in metadata
+  return user.user_metadata?.role === 'admin';
+};
+
 interface AuthContextType {
   currentUser: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<{ needsVerification: boolean }>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -29,6 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  const isAdmin = isUserAdmin(currentUser);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -245,6 +254,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     currentUser,
     session,
     loading,
+    isAdmin,
     login,
     register,
     logout,

@@ -8,6 +8,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,6 +18,7 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   
   const from = (location.state as any)?.from?.pathname || "/";
   
@@ -24,22 +27,113 @@ export default function Login() {
     
     try {
       setIsSubmitting(true);
-      const { needsVerification } = await login(email, password);
       
-      if (needsVerification) {
-        // Redirect to verification page with email and login flag
+      // First try to sign in
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      // If login successful but email not confirmed
+      if (data?.user && !data.user.email_confirmed_at) {
+        // Send verification code
+        await supabase.auth.resend({
+          type: 'signup',
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+        
+        // Redirect to verification page
         navigate("/verify-email", { 
           state: { 
             email,
             isLogin: true 
           } 
         });
-      } else {
-        // Redirect to intended destination
-        navigate(from, { replace: true });
+        return;
       }
-    } catch (error) {
-      console.error("Login error:", error);
+      
+      // If there's an error, check if it's because email is not confirmed
+      if (error?.message?.includes("Email not confirmed")) {
+        // Send verification code
+        await supabase.auth.resend({
+          type: 'signup',
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+        
+        toast({
+          title: "Email verification required",
+          description: "We've sent a verification code to your email.",
+        });
+        
+        // Redirect to verification page
+        navigate("/verify-email", { 
+          state: { 
+            email,
+            isLogin: true 
+          } 
+        });
+        return;
+      }
+      
+      // For other errors, throw them to be caught below
+      if (error) throw error;
+      
+      // If we get here, login was successful and email is confirmed
+      toast({
+        title: "Welcome back!",
+        description: "You've successfully logged in.",
+      });
+      
+      // Redirect to intended destination
+      navigate(from, { replace: true });
+      
+    } catch (error: any) {
+      // Special handling for unverified emails
+      if (error.message?.includes("Email not confirmed")) {
+        // Send verification code
+        try {
+          await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`
+            }
+          });
+          
+          toast({
+            title: "Email verification required",
+            description: "We've sent a verification code to your email.",
+          });
+          
+          // Redirect to verification page
+          navigate("/verify-email", { 
+            state: { 
+              email,
+              isLogin: true 
+            } 
+          });
+        } catch (resendError) {
+          console.error("Failed to resend verification code:", resendError);
+          toast({
+            title: "Verification required",
+            description: "Please verify your email before logging in.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Handle other errors
+        toast({
+          title: "Authentication Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -32,13 +32,19 @@ export function Header() {
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string = "") => {
+    if (!name) return "CB";
     return name
       .split(" ")
       .map(part => part[0])
       .join("")
       .toUpperCase()
       .substring(0, 2);
+  };
+
+  const getUserName = () => {
+    if (!currentUser) return "";
+    return (currentUser.user_metadata?.full_name as string) || "";
   };
 
   return (
@@ -66,7 +72,7 @@ export function Header() {
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10 border-2 border-primary">
                     <AvatarFallback className="bg-muted text-primary">
-                      {currentUser.displayName ? getInitials(currentUser.displayName) : "CB"}
+                      {getInitials(getUserName())}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -121,11 +127,11 @@ export function Header() {
                 <div className="flex items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
                   <Avatar className="h-10 w-10 border-2 border-primary">
                     <AvatarFallback className="bg-muted text-primary">
-                      {currentUser.displayName ? getInitials(currentUser.displayName) : "CB"}
+                      {getInitials(getUserName())}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{currentUser.displayName}</p>
+                    <p className="font-medium">{getUserName()}</p>
                     <p className="text-sm text-muted-foreground">{currentUser.email}</p>
                   </div>
                 </div>

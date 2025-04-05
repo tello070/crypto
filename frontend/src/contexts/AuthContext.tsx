@@ -1,13 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { 
-  auth, 
-  User, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  updateProfile
-} from "@/lib/firebase";
+import { User } from '@supabase/supabase-js';
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
@@ -34,31 +27,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return unsubscribe;
+    // Listen for changes on auth state
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
-        variant: "default",
       });
     } catch (error: any) {
-      let message = "Failed to log in";
-      if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-        message = "Invalid email or password";
-      }
       toast({
         title: "Authentication Error",
-        description: message,
+        description: error.message,
         variant: "destructive",
       });
       throw error;
@@ -70,21 +71,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(user, { displayName: name });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          },
+        },
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Account created!",
-        description: "Your account has been successfully created.",
-        variant: "default",
+        description: "Please check your email for verification.",
       });
     } catch (error: any) {
-      let message = "Failed to create account";
-      if (error.code === "auth/email-already-in-use") {
-        message = "Email already in use";
-      }
       toast({
         title: "Registration Error",
-        description: message,
+        description: error.message,
         variant: "destructive",
       });
       throw error;
@@ -95,13 +101,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       toast({
         title: "Logged out",
         description: "You've been successfully logged out.",
-        variant: "default",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: "Failed to log out",

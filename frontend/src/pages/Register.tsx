@@ -49,7 +49,8 @@ export default function Register() {
     try {
       setIsSubmitting(true);
       await register(formData.name, formData.email, formData.password);
-      navigate("/");
+      // Redirect to verification page
+      navigate("/verify-email", { state: { email: formData.email } });
     } catch (error) {
       console.error("Registration error:", error);
     } finally {

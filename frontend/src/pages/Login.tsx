@@ -24,8 +24,15 @@ export default function Login() {
     
     try {
       setIsSubmitting(true);
-      await login(email, password);
-      navigate(from, { replace: true });
+      const { needsVerification } = await login(email, password);
+      
+      if (needsVerification) {
+        // Redirect to verification page with email
+        navigate("/verify-email", { state: { email } });
+      } else {
+        // Redirect to intended destination
+        navigate(from, { replace: true });
+      }
     } catch (error) {
       console.error("Login error:", error);
     } finally {

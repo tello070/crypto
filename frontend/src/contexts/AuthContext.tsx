@@ -1,14 +1,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   currentUser: User | null;
+  session: Session | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ needsVerification: boolean }>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  verifyEmail: (email: string, token: string) => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -23,18 +26,21 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
       setCurrentUser(session?.user ?? null);
       setLoading(false);
     });
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
       setCurrentUser(session?.user ?? null);
       setLoading(false);
     });
@@ -45,17 +51,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) throw error;
 
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
-      });
+      // Check if email is verified
+      const needsVerification = !data.user.email_confirmed_at;
+      
+      if (!needsVerification) {
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully logged in.",
+        });
+      }
+
+      return { needsVerification };
     } catch (error: any) {
       toast({
         title: "Authentication Error",
@@ -78,18 +91,78 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           data: {
             full_name: name,
           },
+          emailRedirectTo: `${window.location.origin}/verify-email`,
         },
       });
 
       if (error) throw error;
 
+      // Send OTP for email verification
+      await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+
       toast({
         title: "Account created!",
-        description: "Please check your email for verification.",
+        description: "Please check your email for verification code.",
       });
     } catch (error: any) {
       toast({
         title: "Registration Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyEmail = async (email: string, token: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Email verified!",
+        description: "Your account has been successfully verified.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Verification Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendVerificationEmail = async (email: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Verification email sent",
+        description: "Please check your inbox for the verification code.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -120,10 +193,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     currentUser,
+    session,
     loading,
     login,
     register,
-    logout
+    logout,
+    verifyEmail,
+    resendVerificationEmail
   };
 
   return (

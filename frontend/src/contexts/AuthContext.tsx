@@ -3,12 +3,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
-const isUserAdmin = (user: User | null) => {
-  if (!user) return false;
-  // Check if user has admin role in metadata
-  return user.user_metadata?.role === 'admin';
-};
-
 interface AuthContextType {
   currentUser: User | null;
   session: Session | null;
@@ -31,24 +25,33 @@ export const useAuth = () => {
   return context;
 };
 
+// Function to check if user is admin
+const isUserAdmin = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.user_metadata?.role === 'admin';
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
-  const isAdmin = isUserAdmin(currentUser);
-
   useEffect(() => {
+    // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setCurrentUser(session?.user ?? null);
+      setIsAdmin(isUserAdmin(session?.user ?? null));
       setLoading(false);
     });
 
+    // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setCurrentUser(session?.user ?? null);
+      setIsAdmin(isUserAdmin(session?.user ?? null));
       setLoading(false);
     });
 

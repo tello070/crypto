@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, Settings, LayoutDashboard, Shield } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, DollarSign, LayoutDashboard, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
@@ -274,16 +274,12 @@ export function Header() {
                         className="text-lg py-2 hover:text-primary transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        Admin Panel
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </div>
                       </Link>
                     )}
-                    <Link 
-                      to="/profile" 
-                      className="text-lg py-2 hover:text-primary transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Profile
-                    </Link>
                     <Link 
                       to="/settings" 
                       className="text-lg py-2 hover:text-primary transition-colors"

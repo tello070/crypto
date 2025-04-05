@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function VerifyEmail() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -30,7 +30,8 @@ export default function VerifyEmail() {
   }, [location, navigate]);
   
   const handleVerify = async () => {
-    if (!verificationCode || verificationCode.length !== 6) {
+    const code = verificationCode.join('');
+    if (!code || code.length !== 6) {
       toast({
         title: "Invalid code",
         description: "Please enter the 6-digit verification code",
@@ -44,7 +45,7 @@ export default function VerifyEmail() {
       
       const { error } = await supabase.auth.verifyOtp({
         email,
-        token: verificationCode,
+        token: code,
         type: 'email'
       });
       
@@ -95,6 +96,31 @@ export default function VerifyEmail() {
       setIsResending(false);
     }
   };
+
+  const handleInputChange = (index: number, value: string) => {
+    if (value.length > 1) value = value[0];
+    if (!/^\d*$/.test(value)) return; // Only allow digits
+
+    setVerificationCode(prev => {
+      const newCode = [...prev];
+      newCode[index] = value;
+      return newCode;
+    });
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+      // Focus previous input on backspace if current input is empty
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -116,29 +142,27 @@ export default function VerifyEmail() {
                   <p className="text-sm text-muted-foreground">Enter the 6-digit code below</p>
                 </div>
                 
-                <div className="flex justify-center">
-                  <InputOTP 
-                    maxLength={6}
-                    value={verificationCode}
-                    onChange={(value) => setVerificationCode(value)}
-                    render={({ slots }) => (
-                      <InputOTPGroup>
-                        {slots.map((slot, index) => (
-                          <InputOTPSlot 
-                            key={index} 
-                            {...slot} 
-                            className="w-10 h-12 text-lg border-border bg-muted/30 focus:border-primary"
-                          />
-                        ))}
-                      </InputOTPGroup>
-                    )}
-                  />
+                <div className="flex justify-center gap-2">
+                  {verificationCode.map((digit, index) => (
+                    <Input
+                      key={index}
+                      id={`otp-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      value={digit}
+                      onChange={(e) => handleInputChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      maxLength={1}
+                      className="w-12 h-12 text-center text-lg font-mono border-border bg-muted/30 focus:border-primary"
+                      autoComplete="off"
+                    />
+                  ))}
                 </div>
               </div>
               
               <Button 
                 onClick={handleVerify}
-                disabled={isSubmitting || verificationCode.length !== 6}
+                disabled={isSubmitting || verificationCode.join('').length !== 6}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isSubmitting ? (

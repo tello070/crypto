@@ -24,11 +24,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Generate a random 6-digit code
-const generateVerificationCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -36,14 +31,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setCurrentUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setCurrentUser(session?.user ?? null);
@@ -63,29 +56,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
 
-      // Check if email is verified
       const needsVerification = !data.user.email_confirmed_at;
       
-      if (needsVerification) {
-        // Generate and store new verification code
-        const verificationCode = generateVerificationCode();
-        
-        // Store the code in user metadata
-        await supabase.auth.updateUser({
-          data: {
-            verification_code: verificationCode,
-            verification_code_expires: Date.now() + 30 * 60 * 1000 // 30 minutes
-          }
-        });
-
-        // Send verification email with code
-        await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/verify-email`,
-          data: {
-            verification_code: verificationCode
-          }
-        });
-      } else {
+      if (!needsVerification) {
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
@@ -109,31 +82,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       
-      // Generate verification code
-      const verificationCode = generateVerificationCode();
-      
-      // Create user with verification code in metadata
-      const { error: signUpError } = await supabase.auth.signUp({
+      // First, create the user
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: name,
-            verification_code: verificationCode,
-            verification_code_expires: Date.now() + 30 * 60 * 1000 // 30 minutes
           },
-        },
+        }
       });
 
       if (signUpError) throw signUpError;
+      if (!user) throw new Error("Failed to create user");
 
-      // Send verification email with code
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/verify-email`,
-        data: {
-          verification_code: verificationCode
+      // Immediately send OTP
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          data: {
+            full_name: name,
+          }
         }
       });
+
+      if (otpError) throw otpError;
 
       toast({
         title: "Account created!",
@@ -154,36 +128,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const verifyEmail = async (email: string, token: string) => {
     try {
       setLoading(true);
-      
-      // Get user data to check verification code
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) throw userError;
-      
-      if (!user) throw new Error("User not found");
-
-      const storedCode = user.user_metadata.verification_code;
-      const expiryTime = user.user_metadata.verification_code_expires;
-
-      // Verify code is valid and not expired
-      if (!storedCode || !expiryTime || Date.now() > expiryTime) {
-        throw new Error("Verification code has expired");
-      }
-
-      if (token !== storedCode) {
-        throw new Error("Invalid verification code");
-      }
-
-      // Update user metadata and mark email as verified
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: {
-          email_verified: true,
-          verification_code: null,
-          verification_code_expires: null
-        }
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
       });
       
-      if (updateError) throw updateError;
+      if (error) throw error;
       
       toast({
         title: "Email verified!",
@@ -204,29 +155,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const resendVerificationEmail = async (email: string) => {
     try {
       setLoading(true);
-      
-      // Generate new verification code
-      const verificationCode = generateVerificationCode();
-      
-      // Update user metadata with new code
-      await supabase.auth.updateUser({
-        data: {
-          verification_code: verificationCode,
-          verification_code_expires: Date.now() + 30 * 60 * 1000 // 30 minutes
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
         }
       });
-
-      // Send new verification email
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/verify-email`,
-        data: {
-          verification_code: verificationCode
-        }
-      });
+      
+      if (error) throw error;
       
       toast({
-        title: "Code resent",
-        description: "Please check your email for the new verification code.",
+        title: "Code sent",
+        description: "Please check your email for the verification code.",
       });
     } catch (error: any) {
       toast({

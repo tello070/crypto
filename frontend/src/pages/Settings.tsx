@@ -32,8 +32,6 @@ import {
   Lock,
   Bell,
   Shield,
-  CreditCard,
-  Wallet,
   Loader2,
   CheckCircle,
   AlertCircle,
@@ -302,22 +300,6 @@ export default function Settings() {
                     >
                       <Bell className="mr-2 h-4 w-4" />
                       Notifications
-                    </Button>
-                    <Button
-                      variant={activeTab === "payment" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("payment")}
-                    >
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Payment Methods
-                    </Button>
-                    <Button
-                      variant={activeTab === "wallets" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("wallets")}
-                    >
-                      <Wallet className="mr-2 h-4 w-4" />
-                      Crypto Wallets
                     </Button>
                   </div>
                 </CardContent>
@@ -688,102 +670,6 @@ export default function Settings() {
                       )}
                     </Button>
                   </CardFooter>
-                </Card>
-              )}
-
-              {/* Payment Methods */}
-              {activeTab === "payment" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Payment Methods</CardTitle>
-                    <CardDescription>
-                      Manage your payment options for deposits and withdrawals
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                            <CreditCard className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Visa ending in 4582</p>
-                            <p className="text-sm text-muted-foreground">Expires 05/2025</p>
-                          </div>
-                        </div>
-                        <Badge>Default</Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                            <CreditCard className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Mastercard ending in 8724</p>
-                            <p className="text-sm text-muted-foreground">Expires 11/2024</p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          Set as default
-                        </Button>
-                      </div>
-
-                      <Button variant="outline" className="w-full mt-4">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Add Payment Method
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Crypto Wallets */}
-              {activeTab === "wallets" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Crypto Wallets</CardTitle>
-                    <CardDescription>
-                      Manage your connected cryptocurrency wallets
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#F7931A]/10 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full bg-[#F7931A]"></div>
-                          </div>
-                          <div>
-                            <p className="font-medium">Bitcoin Wallet</p>
-                            <p className="text-sm text-muted-foreground">bc1q...8x4j</p>
-                          </div>
-                        </div>
-                        <Badge>Default</Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full bg-[#627EEA]"></div>
-                          </div>
-                          <div>
-                            <p className="font-medium">Ethereum Wallet</p>
-                            <p className="text-sm text-muted-foreground">0x71...9e23</p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          Set as default
-                        </Button>
-                      </div>
-
-                      <Button variant="outline" className="w-full mt-4">
-                        <Wallet className="mr-2 h-4 w-4" />
-                        Connect Wallet
-                      </Button>
-                    </div>
-                  </CardContent>
                 </Card>
               )}
             </div>

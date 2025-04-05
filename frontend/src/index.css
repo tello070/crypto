@@ -77,3 +77,28 @@
 .animate-shimmer {
   animation: shimmer 2s linear infinite;
 }
+
+/* Mobile optimizations */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Improve chart responsiveness */
+.recharts-wrapper {
+  font-size: 12px !important;
+}
+
+@media (max-width: 640px) {
+  .recharts-wrapper {
+    font-size: 10px !important;
+  }
+  
+  .recharts-text {
+    font-size: 10px !important;
+  }
+}

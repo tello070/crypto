@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -16,21 +18,43 @@ export default function Register() {
     confirmPassword: "",
     agreeTerms: false
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const { register } = useAuth();
+  const navigate = useNavigate();
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear password error when user types
+    if (name === "password" || name === "confirmPassword") {
+      setPasswordError("");
+    }
   };
   
   const handleCheckboxChange = (checked: boolean) => {
     setFormData(prev => ({ ...prev, agreeTerms: checked }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock registration functionality
-    console.log("Registration with:", formData);
-    // In a real app, you would call an API here
+    
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      await register(formData.name, formData.email, formData.password);
+      navigate("/");
+    } catch (error) {
+      console.error("Registration error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -56,6 +80,8 @@ export default function Register() {
                     value={formData.name}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
+                    className="bg-muted/50"
                   />
                 </div>
                 <div className="space-y-2">
@@ -68,6 +94,8 @@ export default function Register() {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
+                    className="bg-muted/50"
                   />
                 </div>
                 <div className="space-y-2">
@@ -79,6 +107,8 @@ export default function Register() {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
+                    className="bg-muted/50"
                   />
                 </div>
                 <div className="space-y-2">
@@ -90,7 +120,12 @@ export default function Register() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
+                    className={`bg-muted/50 ${passwordError ? "border-destructive" : ""}`}
                   />
+                  {passwordError && (
+                    <p className="text-sm text-destructive">{passwordError}</p>
+                  )}
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -98,6 +133,7 @@ export default function Register() {
                     checked={formData.agreeTerms}
                     onCheckedChange={handleCheckboxChange}
                     required
+                    disabled={isSubmitting}
                   />
                   <label
                     htmlFor="terms"
@@ -113,8 +149,19 @@ export default function Register() {
                     </Link>
                   </label>
                 </div>
-                <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  Create account
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Create account"
+                  )}
                 </Button>
               </form>
             </CardContent>

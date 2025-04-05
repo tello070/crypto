@@ -6,14 +6,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
 
 export default function VerifyEmail() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState("");
+  const [verificationStatus, setVerificationStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,6 +44,7 @@ export default function VerifyEmail() {
     
     try {
       setIsSubmitting(true);
+      setVerificationStatus("loading");
       
       const { error } = await supabase.auth.verifyOtp({
         email,
@@ -51,19 +54,32 @@ export default function VerifyEmail() {
       
       if (error) throw error;
       
+      setVerificationStatus("success");
+      
       toast({
         title: "Email verified!",
         description: "Your account has been successfully verified.",
       });
       
-      // Redirect to home page
-      navigate("/");
+      // Delay redirect to show success state
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+      
     } catch (error: any) {
+      setVerificationStatus("error");
+      
       toast({
         title: "Verification failed",
         description: error.message || "Please check your code and try again",
         variant: "destructive",
       });
+      
+      // Reset to idle state after showing error
+      setTimeout(() => {
+        setVerificationStatus("idle");
+      }, 2000);
+      
     } finally {
       setIsSubmitting(false);
     }
@@ -121,6 +137,29 @@ export default function VerifyEmail() {
       prevInput?.focus();
     }
   };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').trim();
+    if (!/^\d+$/.test(pastedData)) return; // Only allow digits
+    
+    const digits = pastedData.slice(0, 6).split('');
+    const newCode = [...verificationCode];
+    
+    digits.forEach((digit, index) => {
+      if (index < 6) newCode[index] = digit;
+    });
+    
+    setVerificationCode(newCode);
+    
+    // Focus the next empty input or the last input
+    const nextEmptyIndex = newCode.findIndex(d => d === '');
+    if (nextEmptyIndex !== -1) {
+      document.getElementById(`otp-${nextEmptyIndex}`)?.focus();
+    } else {
+      document.getElementById('otp-5')?.focus();
+    }
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -152,36 +191,99 @@ export default function VerifyEmail() {
                       value={digit}
                       onChange={(e) => handleInputChange(index, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
+                      onPaste={index === 0 ? handlePaste : undefined}
                       maxLength={1}
-                      className="w-12 h-12 text-center text-lg font-mono border-border bg-muted/30 focus:border-primary"
+                      className={`w-12 h-12 text-center text-lg font-mono border-border bg-muted/30 focus:border-primary transition-all duration-300 ${
+                        verificationStatus === "loading" ? "opacity-50" : ""
+                      } ${
+                        verificationStatus === "success" ? "border-green-500 text-green-500" : ""
+                      } ${
+                        verificationStatus === "error" ? "border-red-500 text-red-500" : ""
+                      }`}
                       autoComplete="off"
+                      disabled={verificationStatus !== "idle"}
                     />
                   ))}
                 </div>
               </div>
               
-              <Button 
-                onClick={handleVerify}
-                disabled={isSubmitting || verificationCode.join('').length !== 6}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  "Verify Email"
+              <div className="relative">
+                <Button 
+                  onClick={handleVerify}
+                  disabled={isSubmitting || verificationCode.join('').length !== 6 || verificationStatus !== "idle"}
+                  className={`w-full transition-all duration-300 ${
+                    verificationStatus === "idle" 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                      : "opacity-0"
+                  }`}
+                >
+                  Verify Email
+                </Button>
+                
+                {/* Loading State */}
+                {verificationStatus === "loading" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Button 
+                      className="w-full bg-primary/80 text-primary-foreground"
+                      disabled
+                    >
+                      <div className="absolute inset-0 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+                      </div>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </Button>
+                  </motion.div>
                 )}
-              </Button>
+                
+                {/* Success State */}
+                {verificationStatus === "success" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Button 
+                      className="w-full bg-green-500 text-white"
+                      disabled
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Verified Successfully
+                    </Button>
+                  </motion.div>
+                )}
+                
+                {/* Error State */}
+                {verificationStatus === "error" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Button 
+                      className="w-full bg-red-500 text-white"
+                      disabled
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Verification Failed
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
             </CardContent>
             <CardFooter className="relative z-10 flex justify-center">
               <div className="text-sm text-muted-foreground">
                 Didn't receive a code?{" "}
                 <button 
                   onClick={handleResendCode}
-                  disabled={isResending}
-                  className="text-primary hover:underline inline-flex items-center"
+                  disabled={isResending || verificationStatus !== "idle"}
+                  className={`text-primary hover:underline inline-flex items-center transition-opacity duration-300 ${
+                    verificationStatus !== "idle" ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   {isResending ? (
                     <>

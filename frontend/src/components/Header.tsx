@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, Settings } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, DollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
@@ -54,7 +54,10 @@ export function Header() {
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
             <span className="text-xl font-bold text-primary-foreground">CB</span>
           </div>
-          <span className="text-xl font-bold tracking-tight">CryptoBet</span>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold tracking-tight">CryptoBet</span>
+            <span className="text-xs text-muted-foreground -mt-1">Investor Portal</span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -62,7 +65,8 @@ export function Header() {
           <Link to="/" className="text-foreground/80 hover:text-primary transition-colors">Home</Link>
           <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">About</Link>
           <Link to="/invest" className="text-foreground/80 hover:text-primary transition-colors">Invest</Link>
-          <Link to="/coins" className="text-foreground/80 hover:text-primary transition-colors">Coins</Link>
+          <Link to="/roadmap" className="text-foreground/80 hover:text-primary transition-colors">Roadmap</Link>
+          <Link to="/team" className="text-foreground/80 hover:text-primary transition-colors">Team</Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
@@ -78,11 +82,15 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>Investor Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  <span>My Investments</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
@@ -101,7 +109,7 @@ export function Header() {
                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">Login</Button>
               </Link>
               <Link to="/register">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Register</Button>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Become an Investor</Button>
               </Link>
             </>
           )}
@@ -141,29 +149,38 @@ export function Header() {
                 <Link to="/" className="text-lg py-2 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Home</Link>
                 <Link to="/about" className="text-lg py-2 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>About</Link>
                 <Link to="/invest" className="text-lg py-2 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Invest</Link>
-                <Link to="/coins" className="text-lg py-2 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Coins</Link>
+                <Link to="/roadmap" className="text-lg py-2 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Roadmap</Link>
+                <Link to="/team" className="text-lg py-2 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Team</Link>
               </nav>
               
               <div className="mt-auto mb-8 flex flex-col gap-4">
                 {currentUser ? (
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-destructive text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      handleLogout();
-                      setIsMenuOpen(false);
-                    }}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </Button>
+                  <>
+                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full border-primary text-primary">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        My Investments
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-destructive text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" className="w-full border-primary text-primary">Login</Button>
                     </Link>
                     <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                      <Button className="w-full bg-primary text-primary-foreground">Register</Button>
+                      <Button className="w-full bg-primary text-primary-foreground">Become an Investor</Button>
                     </Link>
                   </>
                 )}

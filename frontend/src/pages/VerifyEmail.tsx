@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RefreshCw, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle, XCircle, ArrowRight, Mail } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 
@@ -16,6 +16,7 @@ export default function VerifyEmail() {
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [email, setEmail] = useState("");
   const [verificationStatus, setVerificationStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [isLogin, setIsLogin] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,8 +24,11 @@ export default function VerifyEmail() {
   useEffect(() => {
     // Get email from location state
     const email = (location.state as any)?.email;
+    const isLoginFlow = (location.state as any)?.isLogin;
+    
     if (email) {
       setEmail(email);
+      setIsLogin(!!isLoginFlow);
     } else {
       // If no email in state, redirect to login
       navigate("/login");
@@ -49,7 +53,7 @@ export default function VerifyEmail() {
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: code,
-        type: 'email'
+        type: 'signup'
       });
       
       if (error) throw error;
@@ -90,20 +94,33 @@ export default function VerifyEmail() {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
       });
       
-      if (error) throw error;
+      if (error && !error.message.includes("For security purposes")) {
+        throw error;
+      }
       
       toast({
         title: "Code resent",
         description: "A new verification code has been sent to your email",
       });
     } catch (error: any) {
-      toast({
-        title: "Failed to resend code",
-        description: error.message || "Please try again later",
-        variant: "destructive",
-      });
+      if (error.message.includes("For security purposes")) {
+        toast({
+          title: "Please wait",
+          description: "For security reasons, you can request a new code after a short delay.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to resend code",
+          description: error.message || "Please try again later",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsResending(false);
     }
@@ -208,15 +225,17 @@ export default function VerifyEmail() {
                     </div>
                     
                     <div className="flex flex-col gap-3">
-                      <Link to="/" className="w-full">
+                      <Link to={isLogin ? "/" : "/login"} className="w-full">
                         <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 group">
-                          Go to Dashboard
+                          {isLogin ? "Go to Dashboard" : "Continue to Login"}
                           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       </Link>
                       
                       <p className="text-xs text-center text-muted-foreground">
-                        You can now access all features of the CryptoBet platform
+                        {isLogin 
+                          ? "You can now access all features of the CryptoBet platform" 
+                          : "You can now log in to access the CryptoBet platform"}
                       </p>
                     </div>
                   </div>
@@ -250,9 +269,13 @@ export default function VerifyEmail() {
           <Card className="border-border shadow-xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 z-0"></div>
             <CardHeader className="relative z-10 space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Verify Your Email</CardTitle>
+              <CardTitle className="text-2xl font-bold text-center">
+                {isLogin ? "Verify Your Account" : "Verify Your Email"}
+              </CardTitle>
               <CardDescription className="text-center">
-                We've sent a verification code to<br />
+                {isLogin 
+                  ? "Please verify your email to continue to your account" 
+                  : "We've sent a verification code to"}<br />
                 <span className="font-medium text-primary">{email || "your email"}</span>
               </CardDescription>
             </CardHeader>
@@ -296,7 +319,7 @@ export default function VerifyEmail() {
                       : "opacity-0"
                   }`}
                 >
-                  Verify Email
+                  Verify {isLogin ? "Account" : "Email"}
                 </Button>
                 
                 {/* Loading State */}

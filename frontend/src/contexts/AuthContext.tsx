@@ -58,7 +58,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const needsVerification = !data.user.email_confirmed_at;
       
-      if (!needsVerification) {
+      if (needsVerification) {
+        // Send verification code for unverified users
+        try {
+          await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`
+            }
+          });
+          
+          toast({
+            title: "Verification required",
+            description: "We've sent a verification code to your email.",
+          });
+        } catch (resendError) {
+          // If resend fails due to rate limiting, just show the verification screen
+          console.error("Failed to resend verification code:", resendError);
+        }
+      } else {
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
@@ -109,7 +128,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       });
 
-      if (otpError) throw otpError;
+      if (otpError && !otpError.message.includes("For security purposes")) {
+        throw otpError;
+      }
 
       toast({
         title: "Account created!",
@@ -173,7 +194,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       });
       
-      if (error) throw error;
+      if (error && !error.message.includes("For security purposes")) {
+        throw error;
+      }
       
       toast({
         title: "Code sent",

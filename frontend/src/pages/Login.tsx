@@ -27,8 +27,13 @@ export default function Login() {
       const { needsVerification } = await login(email, password);
       
       if (needsVerification) {
-        // Redirect to verification page with email
-        navigate("/verify-email", { state: { email } });
+        // Redirect to verification page with email and login flag
+        navigate("/verify-email", { 
+          state: { 
+            email,
+            isLogin: true 
+          } 
+        });
       } else {
         // Redirect to intended destination
         navigate(from, { replace: true });

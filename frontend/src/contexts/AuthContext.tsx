@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       
-      // First, create the user
+      // Step 1: Create user with email/password
       const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -90,20 +90,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           data: {
             full_name: name,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
       if (signUpError) throw signUpError;
       if (!user) throw new Error("Failed to create user");
 
-      // Immediately send OTP
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      // Step 2: Wait a short moment before sending OTP
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 3: Send OTP verification
+      const { error: otpError } = await supabase.auth.resend({
+        type: 'signup',
         email,
         options: {
-          shouldCreateUser: false,
-          data: {
-            full_name: name,
-          }
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
@@ -114,12 +116,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Please check your email for the verification code.",
       });
     } catch (error: any) {
-      toast({
-        title: "Registration Error",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
+      // Handle specific error cases
+      if (error.message.includes("For security purposes")) {
+        toast({
+          title: "Verification code sent",
+          description: "Please check your email for the verification code.",
+        });
+      } else {
+        toast({
+          title: "Registration Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
     } finally {
       setLoading(false);
     }
@@ -131,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.verifyOtp({
         email,
         token,
-        type: 'email',
+        type: 'signup'
       });
       
       if (error) throw error;
@@ -155,10 +165,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const resendVerificationEmail = async (email: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
         email,
         options: {
-          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
       
@@ -169,11 +180,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Please check your email for the verification code.",
       });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message.includes("For security purposes")) {
+        toast({
+          title: "Please wait",
+          description: "You can request a new code after a short delay.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       throw error;
     } finally {
       setLoading(false);

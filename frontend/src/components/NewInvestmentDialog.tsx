@@ -81,7 +81,7 @@ export function NewInvestmentDialog() {
         .from('investments')
         .insert({
           user_id: currentUser.id,
-          user_name: currentUser.user_metadata?.full_name || 'Anonymous',
+          user_name: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
           email: currentUser.email,
           amount: parseFloat(amount),
           coin: coin,

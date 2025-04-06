@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -73,4 +74,8 @@ import {
   UserCheck
 } from "lucide-react";
 
-// Rest of file remains exactly the same
+interface AdminDashboardProps {}
+
+export function AdminDashboard({}: AdminDashboardProps) {
+  // ... (keep all the existing component code)
+}

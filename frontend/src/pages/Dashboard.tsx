@@ -46,7 +46,7 @@ import {
   Loader2
 } from "lucide-react";
 
-export function Dashboard() {
+export default function Dashboard() {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();

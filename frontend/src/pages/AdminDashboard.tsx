@@ -1,100 +1,42 @@
-```typescript
-import React from 'react';
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+  Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from "@/components/ui/card";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 import { 
-  Search, 
-  MoreHorizontal, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
-  Download, 
-  Users, 
-  CreditCard, 
-  ChevronDown,
-  Loader2,
-  Filter,
-  RefreshCw,
-  Shield,
-  Copy,
-  UserCog,
-  Wallet,
-  Ban,
-  UserCheck
+  Search, MoreHorizontal, CheckCircle, XCircle, Eye, 
+  Users, CreditCard, ChevronDown, Loader2, Filter, RefreshCw, Shield, Copy
 } from "lucide-react";
 
-interface AdminDashboardProps {}
-
-export function AdminDashboard({}: AdminDashboardProps) {
-  const { currentUser } = useAuth();
+export function AdminDashboard() {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("investments");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInvestment, setSelectedInvestment] = useState(null);
   const [showInvestmentDetails, setShowInvestmentDetails] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [investmentFilter, setInvestmentFilter] = useState("all");
-  const [userFilter, setUserFilter] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mock data for investments
   const investmentRequests = [
     { 
       id: "INV123456", 
-      userId: "user1", 
       userName: "John Doe", 
       email: "john@example.com",
       amount: 5000, 
@@ -107,7 +49,6 @@ export function AdminDashboard({}: AdminDashboardProps) {
     },
     { 
       id: "INV789012", 
-      userId: "user2", 
       userName: "Jane Smith", 
       email: "jane@example.com",
       amount: 2500, 
@@ -120,7 +61,6 @@ export function AdminDashboard({}: AdminDashboardProps) {
     },
     { 
       id: "INV345678", 
-      userId: "user3", 
       userName: "Alex Johnson", 
       email: "alex@example.com",
       amount: 10000, 
@@ -133,7 +73,6 @@ export function AdminDashboard({}: AdminDashboardProps) {
     },
     { 
       id: "INV901234", 
-      userId: "user4", 
       userName: "Sam Wilson", 
       email: "sam@example.com",
       amount: 7500, 
@@ -200,35 +139,6 @@ export function AdminDashboard({}: AdminDashboardProps) {
     }
   ];
 
-  // Filter investments based on status and search
-  const filteredInvestments = investmentRequests.filter(investment => {
-    if (investmentFilter === "all") return true;
-    return investment.status === investmentFilter;
-  }).filter(investment => {
-    if (!searchQuery) return true;
-    return (
-      investment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      investment.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      investment.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
-
-  // Filter users based on role and search
-  const filteredUsers = users.filter(user => {
-    if (userFilter === "all") return true;
-    if (userFilter === "admin") return user.role === "admin";
-    if (userFilter === "active") return user.status === "active";
-    if (userFilter === "inactive") return user.status === "inactive";
-    return true;
-  }).filter(user => {
-    if (!searchQuery) return true;
-    return (
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
-
   // Get status badge color
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
@@ -248,58 +158,6 @@ export function AdminDashboard({}: AdminDashboardProps) {
         return <Badge className="bg-red-500/10 text-red-500 border-red-500/50">Inactive</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  // Handle role change
-  const handleRoleChange = async (userId, newRole) => {
-    try {
-      // In a real app, you would call an API to update the user role
-      console.log(`Changing user ${userId} role to ${newRole}`);
-      
-      toast({
-        title: "Role updated",
-        description: `User role has been changed to ${newRole}.`,
-      });
-      
-      // Simulate API call
-      setIsRefreshing(true);
-      setTimeout(() => {
-        setIsRefreshing(false);
-      }, 1000);
-      
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update user role",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle user status change
-  const handleStatusChange = async (userId, newStatus) => {
-    try {
-      // In a real app, you would call an API to update the user status
-      console.log(`Changing user ${userId} status to ${newStatus}`);
-      
-      toast({
-        title: "Status updated",
-        description: `User status has been changed to ${newStatus}.`,
-      });
-      
-      // Simulate API call
-      setIsRefreshing(true);
-      setTimeout(() => {
-        setIsRefreshing(false);
-      }, 1000);
-      
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update user status",
-        variant: "destructive",
-      });
     }
   };
 
@@ -433,40 +291,6 @@ export function AdminDashboard({}: AdminDashboardProps) {
 
                 <TabsContent value="investments" className="p-0 m-0">
                   <div className="container p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8">
-                              <Filter className="h-3.5 w-3.5 mr-2" />
-                              {investmentFilter === "all" ? "All Statuses" : 
-                               investmentFilter === "pending" ? "Pending" : 
-                               investmentFilter === "approved" ? "Approved" : 
-                               "Rejected"}
-                              <ChevronDown className="h-3.5 w-3.5 ml-2" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuItem onClick={() => setInvestmentFilter("all")}>
-                              All Statuses
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setInvestmentFilter("pending")}>
-                              Pending
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setInvestmentFilter("approved")}>
-                              Approved
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setInvestmentFilter("rejected")}>
-                              Rejected
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <span className="text-sm text-muted-foreground">
-                          {filteredInvestments.length} {filteredInvestments.length === 1 ? 'request' : 'requests'} found
-                        </span>
-                      </div>
-                    </div>
-
                     <div className="rounded-md border">
                       <Table>
                         <TableHeader>
@@ -481,150 +305,83 @@ export function AdminDashboard({}: AdminDashboardProps) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredInvestments.length > 0 ? (
-                            filteredInvestments.map((investment) => (
-                              <TableRow key={investment.id} className="group">
-                                <TableCell className="font-mono text-xs">
-                                  {investment.id}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-medium">{investment.userName}</div>
-                                  <div className="text-sm text-muted-foreground">{investment.email}</div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-medium">${investment.amount.toLocaleString()}</div>
-                                  <div className="text-sm text-muted-foreground">{investment.cbcAmount.toLocaleString()} CBC</div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-medium">{investment.coin}</div>
-                                  <div className="text-sm text-muted-foreground">{investment.coinAmount} {investment.coin}</div>
-                                </TableCell>
-                                <TableCell>
-                                  {new Date(investment.date).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell>
-                                  {getStatusBadge(investment.status)}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end space-x-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        setSelectedInvestment(investment);
-                                        setShowInvestmentDetails(true);
-                                      }}
-                                      className="h-8 w-8 opacity-70 group-hover:opacity-100"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                      <span className="sr-only">View details</span>
-                                    </Button>
-                                    {investment.status === "pending" && (
-                                      <>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={() => {
-                                            setSelectedInvestment(investment);
-                                            handleApproveInvestment();
-                                          }}
-                                          className="h-8 w-8 text-green-500 opacity-70 group-hover:opacity-100"
-                                        >
-                                          <CheckCircle className="h-4 w-4" />
-                                          <span className="sr-only">Approve</span>
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={() => {
-                                            setSelectedInvestment(investment);
-                                            handleRejectInvestment();
-                                          }}
-                                          className="h-8 w-8 text-red-500 opacity-70 group-hover:opacity-100"
-                                        >
-                                          <XCircle className="h-4 w-4" />
-                                          <span className="sr-only">Reject</span>
-                                        </Button>
-                                      </>
-                                    )}
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={7} className="h-24 text-center">
-                                No investment requests found.
+                          {investmentRequests.map((investment) => (
+                            <TableRow key={investment.id} className="group">
+                              <TableCell className="font-mono text-xs">
+                                {investment.id}
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">{investment.userName}</div>
+                                <div className="text-sm text-muted-foreground">{investment.email}</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">${investment.amount.toLocaleString()}</div>
+                                <div className="text-sm text-muted-foreground">{investment.cbcAmount.toLocaleString()} CBC</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">{investment.coin}</div>
+                                <div className="text-sm text-muted-foreground">{investment.coinAmount} {investment.coin}</div>
+                              </TableCell>
+                              <TableCell>
+                                {new Date(investment.date).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(investment.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setSelectedInvestment(investment);
+                                      setShowInvestmentDetails(true);
+                                    }}
+                                    className="h-8 w-8 opacity-70 group-hover:opacity-100"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    <span className="sr-only">View details</span>
+                                  </Button>
+                                  {investment.status === "pending" && (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                          setSelectedInvestment(investment);
+                                          handleApproveInvestment();
+                                        }}
+                                        className="h-8 w-8 text-green-500 opacity-70 group-hover:opacity-100"
+                                      >
+                                        <CheckCircle className="h-4 w-4" />
+                                        <span className="sr-only">Approve</span>
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                          setSelectedInvestment(investment);
+                                          handleRejectInvestment();
+                                        }}
+                                        className="h-8 w-8 text-red-500 opacity-70 group-hover:opacity-100"
+                                      >
+                                        <XCircle className="h-4 w-4" />
+                                        <span className="sr-only">Reject</span>
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               </TableCell>
                             </TableRow>
-                          )}
+                          ))}
                         </TableBody>
                       </Table>
-                    </div>
-
-                    <div className="mt-4">
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious href="#" />
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationLink href="#" isActive>1</PaginationLink>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationLink href="#">2</PaginationLink>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationLink href="#">3</PaginationLink>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationNext href="#" />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
                     </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="users" className="p-0 m-0">
                   <div className="container p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8">
-                              <Filter className="h-3.5 w-3.5 mr-2" />
-                              {userFilter === "all" ? "All Users" : 
-                               userFilter === "admin" ? "Admins" : 
-                               userFilter === "active" ? "Active" : 
-                               "Inactive"}
-                              <ChevronDown className="h-3.5 w-3.5 ml-2" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuItem onClick={() => setUserFilter("all")}>
-                              All Users
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setUserFilter("admin")}>
-                              Admins
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setUserFilter("active")}>
-                              Active
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setUserFilter("inactive")}>
-                              Inactive
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <span className="text-sm text-muted-foreground">
-                          {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'} found
-                        </span>
-                      </div>
-                    </div>
-
                     <div className="rounded-md border">
                       <Table>
                         <TableHeader>
@@ -639,114 +396,61 @@ export function AdminDashboard({}: AdminDashboardProps) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredUsers.length > 0 ? (
-                            filteredUsers.map((user) => (
-                              <TableRow key={user.id} className="group">
-                                <TableCell>
-                                  <div className="font-medium">{user.name}</div>
-                                  <div className="text-sm text-muted-foreground">{user.email}</div>
-                                </TableCell>
-                                <TableCell>
-                                  {user.role === "admin" ? (
-                                    <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/50">Admin</Badge>
-                                  ) : (
-                                    <Badge variant="outline">User</Badge>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  {getStatusBadge(user.status)}
-                                </TableCell>
-                                <TableCell>
-                                  {new Date(user.joinDate).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell>
-                                  {getStatusBadge(user.kycStatus)}
-                                </TableCell>
-                                <TableCell>
-                                  ${user.totalInvested.toLocaleString()}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 opacity-70 group-hover:opacity-100"
-                                      >
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Open menu</span>
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem>
-                                        <Eye className="h-4 w-4 mr-2" />
-                                        View Details
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem>
-                                        <Wallet className="h-4 w-4 mr-2" />
-                                        View Investments
-                                      </DropdownMenuItem>
-                                      {user.role === "user" ? (
-                                        <DropdownMenuItem onClick={() => handleRoleChange(user.id, "admin")}>
-                                          <Shield className="h-4 w-4 mr-2" />
-                                          Make Admin
-                                        </DropdownMenuItem>
-                                      ) : (
-                                        <DropdownMenuItem onClick={() => handleRoleChange(user.id, "user")}>
-                                          <UserCog className="h-4 w-4 mr-2" />
-                                          Remove Admin
-                                        </DropdownMenuItem>
-                                      )}
-                                      {user.status === "active" ? (
-                                        <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")}>
-                                          <Ban className="h-4 w-4 mr-2" />
-                                          Deactivate User
-                                        </DropdownMenuItem>
-                                      ) : (
-                                        <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")}>
-                                          <UserCheck className="h-4 w-4 mr-2" />
-                                          Activate User
-                                        </DropdownMenuItem>
-                                      )}
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={7} className="h-24 text-center">
-                                No users found.
+                          {users.map((user) => (
+                            <TableRow key={user.id} className="group">
+                              <TableCell>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                              </TableCell>
+                              <TableCell>
+                                {user.role === "admin" ? (
+                                  <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/50">Admin</Badge>
+                                ) : (
+                                  <Badge variant="outline">User</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(user.status)}
+                              </TableCell>
+                              <TableCell>
+                                {new Date(user.joinDate).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(user.kycStatus)}
+                              </TableCell>
+                              <TableCell>
+                                ${user.totalInvested.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 opacity-70 group-hover:opacity-100"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4" />
+                                      <span className="sr-only">Open menu</span>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem>
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      Make Admin
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      Deactivate User
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
-                          )}
+                          ))}
                         </TableBody>
                       </Table>
-                    </div>
-
-                    <div className="mt-4">
-                      <Pagination>
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious href="#" />
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationLink href="#" isActive>1</PaginationLink>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationLink href="#">2</PaginationLink>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationLink href="#">3</PaginationLink>
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                          <PaginationItem>
-                            <PaginationNext href="#" />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
                     </div>
                   </div>
                 </TabsContent>
@@ -778,4 +482,101 @@ export function AdminDashboard({}: AdminDashboardProps) {
                   <div>{getStatusBadge(selectedInvestment.status)}</div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text
+                  <h4 className="text-sm font-medium text-muted-foreground">User</h4>
+                  <p>{selectedInvestment.userName}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
+                  <p>{selectedInvestment.email}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Amount</h4>
+                  <p>${selectedInvestment.amount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">CBC Amount</h4>
+                  <p>{selectedInvestment.cbcAmount.toLocaleString()} CBC</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Coin</h4>
+                  <p>{selectedInvestment.coin}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Coin Amount</h4>
+                  <p>{selectedInvestment.coinAmount} {selectedInvestment.coin}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
+                  <p>{new Date(selectedInvestment.date).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">Transaction Hash</h4>
+                <div className="flex items-center space-x-2">
+                  <code className="bg-muted p-2 rounded text-xs font-mono w-full overflow-x-auto">
+                    {selectedInvestment.transactionHash}
+                  </code>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedInvestment.transactionHash);
+                      toast({
+                        title: "Copied",
+                        description: "Transaction hash copied to clipboard",
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            {selectedInvestment && selectedInvestment.status === "pending" && (
+              <div className="flex space-x-2">
+                <Button
+                  variant="destructive"
+                  onClick={handleRejectInvestment}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <XCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Reject
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleApproveInvestment}
+                  disabled={isProcessing}
+                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Approve
+                </Button>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => setShowInvestmentDetails(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Footer />
+    </div>
+  );
+}

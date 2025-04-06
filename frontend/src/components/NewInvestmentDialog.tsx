@@ -29,7 +29,7 @@ export function NewInvestmentDialog() {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [coin, setCoin] = useState("BTC");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Calculate CBC amount based on investment amount (1 USD = 2 CBC)
   const cbcAmount = parseFloat(amount) * 2 || 0;
@@ -50,66 +50,39 @@ export function NewInvestmentDialog() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!currentUser) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to make an investment",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid investment amount",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
+    setLoading(true);
     try {
-      // Generate a mock transaction hash
-      const transactionHash = `0x${Array.from({length: 40}, () => 
-        Math.floor(Math.random() * 16).toString(16)).join('')}`;
-      
-      // Save investment to database
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('investments')
-        .insert({
-          user_id: currentUser.id,
-          user_name: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
-          email: currentUser.email,
-          amount: parseFloat(amount),
-          coin: coin,
-          coin_amount: getCoinAmount(),
-          cbc_amount: cbcAmount,
-          status: 'pending',
-          transaction_hash: transactionHash
-        });
-      
+        .insert([
+          {
+            user_id: currentUser?.id,
+            amount: parseFloat(amount),
+            coin: coin,
+            coin_amount: getCoinAmount(),
+            cbc_amount: cbcAmount,
+          }
+        ]);
+
       if (error) throw error;
-      
+
       toast({
-        title: "Investment submitted",
-        description: `Your investment of $${amount} has been submitted for approval.`,
+        title: "Success",
+        description: "Investment created successfully"
       });
       
       setOpen(false);
       setAmount("");
       setCoin("BTC");
-    } catch (error) {
-      console.error("Error submitting investment:", error);
+    } catch (error: any) {
       toast({
-        title: "Investment failed",
-        description: error.message || "Failed to submit investment. Please try again.",
-        variant: "destructive",
+        variant: "destructive", 
+        title: "Error",
+        description: "Failed to create investment. Please try again."
       });
+      console.error('Error:', error.message);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -171,8 +144,8 @@ export function NewInvestmentDialog() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button type="submit" disabled={loading}>
+              {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...

@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import { NewInvestmentDialog } from "@/components/NewInvestmentDialog";
 import { 
   Card, 
@@ -55,20 +55,15 @@ export default function Dashboard() {
   const [totalInvested, setTotalInvested] = useState(0);
   const [totalCBC, setTotalCBC] = useState(0);
 
-  // Fetch user investments
   useEffect(() => {
     const fetchInvestments = async () => {
       try {
-        if (!currentUser) return;
-
         const { data, error } = await supabase
           .from('investments')
           .select('*')
-          .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
+          .eq('user_id', currentUser?.id);
 
         if (error) throw error;
-
         setInvestments(data || []);
         
         // Calculate totals
@@ -78,20 +73,22 @@ export default function Dashboard() {
           setTotalInvested(invested);
           setTotalCBC(cbc);
         }
-      } catch (error) {
-        console.error("Error fetching investments:", error);
+      } catch (error: any) {
         toast({
-          title: "Error",
-          description: "Failed to load your investments",
           variant: "destructive",
+          title: "Error",
+          description: "Could not load your investments. Please try again later."
         });
+        console.error('Error:', error.message);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchInvestments();
-  }, [currentUser, toast]);
+    if (currentUser) {
+      fetchInvestments();
+    }
+  }, [currentUser]);
 
   // Mock chart data
   const chartData = [
